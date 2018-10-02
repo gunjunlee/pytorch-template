@@ -1,1 +1,1 @@
-from .metric import Dice_metric
+from .metric import Metric

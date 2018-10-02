@@ -7,29 +7,29 @@ class Model(nn.Module):
         super(Model, self).__init__()
         self.net = net
         self.optimizer = None
-        self.loss = None
+        self.criterion = None
         self.metric = None
         self.scheduler = None
         
     def forward(self, x):
         return self.net(x)
     
-    def compile(optimizer, loss, metric=None, scheduler=None):
+    def compile(self, optimizer, criterion, metric=None, scheduler=None):
         if optimizer is None:
             raise ValueError('optimizer is None!')
-        if loss is None:
-            raise ValueError('loss is None!')
+        if criterion is None:
+            raise ValueError('criterion is None!')
         
         self.optimizer = optimizer
-        self.loss = loss
+        self.criterion = criterion
         self.metric = metric
         self.scheduler = scheduler
 
     def fit(self, train_dataloader, val_dataloader, epoch=100, use_gpu=True):
         if self.optimizer is None:
             raise RuntimeError('optimizer is not defined! Compile the model before fitting!')
-        if self.loss is None:
-            raise RuntimeError('loss is not defined! Compile the model before fitting!')
+        if self.criterion is None:
+            raise RuntimeError('criterion is not defined! Compile the model before fitting!')
         
         import shutil
         def padding(arg, width, pad=' '):
@@ -43,10 +43,10 @@ class Model(nn.Module):
                 raise ValueError('Unknown type: {}'.format(type(arg)))
 
         def print_row(kwarg_list=[], pad=' '):
-            length = len(kwarg_list)
-            term_width = shutil.get_terminal_size()
-            width = min(term_width, 150) // length - 2
-            row = '|{}' * length + '|'
+            len_kwargs = len(kwarg_list)
+            term_width = shutil.get_terminal_size().columns
+            width = min((term_width-1-len_kwargs)*9//10, 150) // len_kwargs
+            row = '|{}' * len_kwargs + '|'
             columns = []
             for kwarg in kwarg_list:
                 columns.append(padding(kwarg, width, pad=pad))
@@ -55,12 +55,8 @@ class Model(nn.Module):
         from termcolor import colored
         from time import time
 
-        kwarg_list = ['epoch', 'loss', 'metric', 'val loss', 'val metric' 'time']
+        kwarg_list = ['epoch', 'loss', 'metric', 'val loss', 'val metric', 'time']
 
-        # 4 is num of kwargs
-        len_kwargs = len(kwarg_list)
-        term_width = shutil.get_terminal_size()
-        width = min((term_width-1-len_kwargs)*9//10, 150) // len_kwargs
         print(colored('model training start!', 'green'))
 
         print_row(kwarg_list=['']*len(kwarg_list), pad='-')
@@ -86,7 +82,7 @@ class Model(nn.Module):
                     dataloader = val_dataloader
                 
                 for batch_x, batch_y in tqdm(dataloader, leave=False):
-                    optimizer.zero_grad()
+                    self.optimizer.zero_grad()
 
                     if use_gpu:
                         batch_x = batch_x.cuda()
@@ -94,12 +90,14 @@ class Model(nn.Module):
                     
                     with torch.set_grad_enabled(phase == 'train'):
                         outputs = self.net(batch_x)
-                        loss = criterion(outputs, batch_y)
-                        loss.backward()
-                        optimizer.step()
+                        loss = self.criterion(outputs, batch_y)
+
+                        if phase == 'train':
+                            loss.backward()
+                            self.optimizer.step()
                     
                     running_loss += loss.item() * batch_x.size(0)
-                    running_metric += metric(outputs, batch_y).item() * batch_x.size(0)
+                    running_metric += self.metric(outputs, batch_y).item() * batch_x.size(0)
 
                 running_loss = running_loss / len(dataloader.dataset)
                 running_metric = running_metric / len(dataloader.dataset)
@@ -111,11 +109,11 @@ class Model(nn.Module):
                     val_loss = running_loss
                     val_metric = running_metric
 
-            if isinstance(scheduler, ReduceLROnPlateau):
-                scheduler.step(val_loss)
+            if isinstance(self.scheduler, ReduceLROnPlateau):
+                self.scheduler.step(val_loss)
             else:
-                scheduler.step()
+                self.scheduler.step()
 
-            elapsed_time = (start_time - time()) / 1000
+            elapsed_time = time()-start_time
             print_row(kwarg_list=[ep, train_loss, train_metric, val_loss, val_metric, elapsed_time], pad=' ')
             print_row(kwarg_list=['']*len(kwarg_list), pad='-')

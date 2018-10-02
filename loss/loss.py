@@ -1,6 +1,15 @@
 import torch
 import torch.nn as nn
 
+class Loss(nn.Module):
+    def __init__(self):
+        super(Loss, self).__init__()
+        self.loss = None
+    
+    def forward(self, pred, target):
+        x = self.loss(pred, target)
+        return x
+
 class Dice_loss(nn.Module):
     def __init__(self):
         super(Dice_loss, self).__init__()

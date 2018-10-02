@@ -1,6 +1,14 @@
 import torch
 import torch.nn as nn
 
+class Metric(nn.Module):
+    def __init__(self):
+        super(Metric, self).__init__()
+        self.metric = None
+
+    def forward(self, pred, target):
+        return self.metric(pred, target)
+
 class Dice_metric(nn.Module):
     def __init__(self):
         super(Dice_metric, self).__init__()
