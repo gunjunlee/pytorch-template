@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from torch.optim.lr_scheduler import ReduceLROnPlateau
+from tqdm import tqdm
 
 
 class Model(nn.Module):
