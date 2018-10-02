@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
+
 class Model(nn.Module):
     def __init__(self, net):
         super(Model, self).__init__()
@@ -25,22 +26,33 @@ class Model(nn.Module):
         self.metric = metric
         self.scheduler = scheduler
 
-    def fit(self, train_dataloader, val_dataloader, epoch=100, use_gpu=True):
+    def fit(self, train_dataloader, val_dataloader,
+            epoch=100, use_gpu=True, pth='ckpt/model.pth'):
         if self.optimizer is None:
-            raise RuntimeError('optimizer is not defined! Compile the model before fitting!')
+            raise RuntimeError('optimizer is not defined!'
+                               'Compile the model before fitting!')
         if self.criterion is None:
-            raise RuntimeError('criterion is not defined! Compile the model before fitting!')
+            raise RuntimeError('criterion is not defined!'
+                               'Compile the model before fitting!')
         
         import shutil
+
         def padding(arg, width, pad=' '):
             if isinstance(arg, float):
-                return '{:.6f}'.format(arg)
+                return '{:.6f}'.format(arg).center(width, pad)
             elif isinstance(arg, int):
-                return '{:6d}'.format(arg)
+                return '{:6d}'.format(arg).center(width, pad)
             elif isinstance(arg, str):
-                return arg
+                return arg.center(width, pad)
+            elif isinstance(arg, tuple):
+                if len(arg) != 2:
+                    raise ValueError('Unknown type: {}'.format(type(arg), arg))
+                if not isinstance(arg[1], str):
+                    raise ValueError('Unknown type: {}'
+                                     .format(type(arg[1]), arg[1]))
+                return colored(padding(arg[0], width, pad=pad), arg[1])
             else:
-                raise ValueError('Unknown type: {}'.format(type(arg)))
+                raise ValueError('Unknown type: {}'.format(type(arg), arg))
 
         def print_row(kwarg_list=[], pad=' '):
             len_kwargs = len(kwarg_list)
@@ -55,7 +67,8 @@ class Model(nn.Module):
         from termcolor import colored
         from time import time
 
-        kwarg_list = ['epoch', 'loss', 'metric', 'val loss', 'val metric', 'time']
+        kwarg_list = ['epoch', 'loss', 'metric',
+                      'val loss', 'val metric', 'time']
 
         print(colored('model training start!', 'green'))
 
@@ -63,6 +76,7 @@ class Model(nn.Module):
         print_row(kwarg_list=kwarg_list, pad=' ')
         print_row(kwarg_list=['']*len(kwarg_list), pad='-')
 
+        min_val_loss = 1e+8
         for ep in range(1, epoch+1):
             start_time = time()
             train_loss = None
@@ -102,7 +116,7 @@ class Model(nn.Module):
                 running_loss = running_loss / len(dataloader.dataset)
                 running_metric = running_metric / len(dataloader.dataset)
 
-                if phase =='train':
+                if phase == 'train':
                     train_loss = running_loss
                     train_metric = running_metric
                 elif phase == 'val':
@@ -115,5 +129,20 @@ class Model(nn.Module):
                 self.scheduler.step()
 
             elapsed_time = time()-start_time
-            print_row(kwarg_list=[ep, train_loss, train_metric, val_loss, val_metric, elapsed_time], pad=' ')
+
+            if min_val_loss > val_loss:
+                min_val_loss = val_loss
+                self.save_model(pth)
+                ep = (str(ep)+'(saved)', 'blue')
+
+            print_row(kwarg_list=[ep, train_loss, train_metric,
+                                  val_loss, val_metric, elapsed_time], pad=' ')
             print_row(kwarg_list=['']*len(kwarg_list), pad='-')
+
+    def save_model(self, pth):
+        if hasattr(self.net, 'module'):
+            state_dict = self.net.module.state_dict()
+        else:
+            state_dict = self.net.state_dict()
+
+        torch.save(state_dict, pth)

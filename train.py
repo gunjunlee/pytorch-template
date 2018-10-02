@@ -2,6 +2,7 @@ from models import Model
 from loss import Loss
 from metric import Metric
 
+
 def arg_parse():
     import argparse
     parser = argparse.ArgumentParser()
