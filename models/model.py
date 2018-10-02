@@ -87,21 +87,21 @@ class Model(nn.Module):
             for phase in ['train', 'val']:
                 running_loss = 0
                 running_metric = 0
-                
+
                 if phase == 'train':
                     self.net = self.net.train()
                     dataloader = train_dataloader
                 elif phase == 'val':
                     self.net = self.net.eval()
                     dataloader = val_dataloader
-                
+
                 for batch_x, batch_y in tqdm(dataloader, leave=False):
                     self.optimizer.zero_grad()
 
                     if use_gpu:
                         batch_x = batch_x.cuda()
                         batch_y = batch_y.cuda()
-                    
+
                     with torch.set_grad_enabled(phase == 'train'):
                         outputs = self.net(batch_x)
                         loss = self.criterion(outputs, batch_y)
@@ -109,7 +109,7 @@ class Model(nn.Module):
                         if phase == 'train':
                             loss.backward()
                             self.optimizer.step()
-                    
+
                     running_loss += loss.item() * batch_x.size(0)
                     running_metric += self.metric(outputs, batch_y).item() * batch_x.size(0)
 
