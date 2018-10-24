@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from tqdm import tqdm
+from tensorboardX import SummaryWriter
 
 
 class Model(nn.Module):
@@ -27,6 +28,13 @@ class Model(nn.Module):
         self.metric = metric
         self.scheduler = scheduler
 
+    def summary(self, input_size=(3, 224, 224), use_gpu=False):
+        from torchsummary import summary
+        if use_gpu:
+            summary(self.net.cuda(), input_size=input_size)
+        else:
+            summary(self.net.cpu(), input_size=input_size, device='cpu')
+
     def fit(self, train_dataloader, val_dataloader,
             epoch=100, use_gpu=True, pth='ckpt/model.pth'):
         if self.optimizer is None:
@@ -37,6 +45,8 @@ class Model(nn.Module):
                                'Compile the model before fitting!')
         
         import shutil
+
+        writer = SummaryWriter('logs/first')
 
         def padding(arg, width, pad=' '):
             if isinstance(arg, float):
@@ -135,6 +145,11 @@ class Model(nn.Module):
                 min_val_loss = val_loss
                 self.save_model(pth)
                 ep = (str(ep)+'(saved)', 'blue')
+
+            writer.add_scalar('loss/train', train_loss, epoch)
+            writer.add_scalar('loss/val', val_loss, epoch)
+            writer.add_scalar('metric/train', train_metric, epoch)
+            writer.add_scalar('metric/val', val_metric, epoch)
 
             print_row(kwarg_list=[ep, train_loss, train_metric,
                                   val_loss, val_metric, elapsed_time], pad=' ')

@@ -69,3 +69,19 @@ class BaseDataLoader(torch.utils.data.DataLoader):
         """
 
         return [BaseDataLoader(dataset=subset, **self.kwargs) for subset in self.dataset.split(lengths, shuffle=shuffle)]
+
+
+class CustomDataset(BaseDataset):
+    """recommended custom dataset structure
+    """
+
+    def __init__(self):
+        super(CustomDataset, self).__init__()
+
+        self.file_list = []
+
+    def __len__(self):
+        return len(self.file_list)
+
+    def __getitem__(self, idx):
+        return

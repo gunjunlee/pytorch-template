@@ -1,6 +1,14 @@
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import torch.optim.lr_scheduler as lr_scheduler
+
+import random
+
 from models import Model
 from loss import Loss
 from metric import Metric
+from dataloader import BaseDataset, BaseDataLoader
 
 
 def arg_parse():
@@ -12,13 +20,18 @@ def arg_parse():
     add_arg('--lr', default=1e-3, type=float, help='learning rate')
     add_arg('--num_workers', default=8, type=int, help='num of workers')
     add_arg('--gpu', default=True, help='using gpu')
+    add_arg('--epochs', default=100, type=int, help='num of epochs')
     
     args = parser.parse_args()
     return args
 
 if __name__ == '__main__':
     args = arg_parse()
-    random.seed(1000)
+    random.seed(1000) # random 을 쓰는 경우
+    np.random.seed(1000) # np.random 을 쓰는 경우
+    torch.manual_seed(1000) # torch cpu
+    torch.cuda.manual_seed_all(1000) # torch gpu
+    torch.backends.cudnn.deterministic = True # cudnn 을 쓰는 경우
 
     '''suggested format
     dataset = Dataset()
@@ -40,9 +53,10 @@ if __name__ == '__main__':
     scheduler = lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
 
     model = Model(net)
+    model.summary(input_size=(3, 1024, 1024), use_gpu=args.gpu)
     model.compile(optimizer, criterion, metric, scheduler)
     model.fit(train_dataloader=train_dataloader,
               val_dataloader=val_dataloader,
-              epoch=args.epoch,
+              epoch=args.epochs,
               use_gpu=args.gpu)
     '''
