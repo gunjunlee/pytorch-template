@@ -146,10 +146,10 @@ class Model(nn.Module):
                 self.save_model(pth)
                 ep = (str(ep)+'(saved)', 'blue')
 
-            writer.add_scalar('loss/train', train_loss, epoch)
-            writer.add_scalar('loss/val', val_loss, epoch)
-            writer.add_scalar('metric/train', train_metric, epoch)
-            writer.add_scalar('metric/val', val_metric, epoch)
+            writer.add_scalar('loss/train', train_loss, ep)
+            writer.add_scalar('loss/val', val_loss, ep)
+            writer.add_scalar('metric/train', train_metric, ep)
+            writer.add_scalar('metric/val', val_metric, ep)
 
             print_row(kwarg_list=[ep, train_loss, train_metric,
                                   val_loss, val_metric, elapsed_time], pad=' ')
