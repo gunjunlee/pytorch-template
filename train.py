@@ -3,6 +3,8 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 
+import numpy as np
+
 import random
 
 from models import Model
@@ -27,11 +29,11 @@ def arg_parse():
 
 if __name__ == '__main__':
     args = arg_parse()
-    random.seed(1000) # random 을 쓰는 경우
-    np.random.seed(1000) # np.random 을 쓰는 경우
+    random.seed(1000) # random
+    np.random.seed(1000) # np.random
     torch.manual_seed(1000) # torch cpu
     torch.cuda.manual_seed_all(1000) # torch gpu
-    torch.backends.cudnn.deterministic = True # cudnn 을 쓰는 경우
+    torch.backends.cudnn.deterministic = True # cudnn. *CAUTION* this will make it slow to learn.
 
     '''suggested format
     dataset = Dataset()

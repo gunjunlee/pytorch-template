@@ -4,6 +4,9 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 from tqdm import tqdm
 from tensorboardX import SummaryWriter
 
+import os
+import os.path as osp
+
 
 class Model(nn.Module):
     def __init__(self, net):
@@ -36,17 +39,19 @@ class Model(nn.Module):
             summary(self.net.cpu(), input_size=input_size, device='cpu')
 
     def fit(self, train_dataloader, val_dataloader,
-            epoch=100, use_gpu=True, pth='ckpt/model.pth'):
+            epoch=100, use_gpu=True, pth='ckpt/model.pth', log='logs/first'):
         if self.optimizer is None:
             raise RuntimeError('optimizer is not defined!'
                                'Compile the model before fitting!')
         if self.criterion is None:
             raise RuntimeError('criterion is not defined!'
                                'Compile the model before fitting!')
-        
+        if not osp.isdir(osp.dirname(pth)):
+            os.makedirs(osp.dirname(pth))
+
         import shutil
 
-        writer = SummaryWriter('logs/first')
+        writer = SummaryWriter(log)
 
         def padding(arg, width, pad=' '):
             if isinstance(arg, float):
@@ -141,15 +146,15 @@ class Model(nn.Module):
 
             elapsed_time = time()-start_time
 
-            if min_val_loss > val_loss:
-                min_val_loss = val_loss
-                self.save_model(pth)
-                ep = (str(ep)+'(saved)', 'blue')
-
             writer.add_scalar('loss/train', train_loss, ep)
             writer.add_scalar('loss/val', val_loss, ep)
             writer.add_scalar('metric/train', train_metric, ep)
             writer.add_scalar('metric/val', val_metric, ep)
+
+            if min_val_loss > val_loss:
+                min_val_loss = val_loss
+                self.save_model(pth)
+                ep = (str(ep)+'(saved)', 'blue')
 
             print_row(kwarg_list=[ep, train_loss, train_metric,
                                   val_loss, val_metric, elapsed_time], pad=' ')
