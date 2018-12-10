@@ -60,5 +60,7 @@ if __name__ == '__main__':
     model.fit(train_dataloader=train_dataloader,
               val_dataloader=val_dataloader,
               epoch=args.epochs,
-              use_gpu=args.gpu)
+              use_gpu=args.gpu,
+              pth='ckpt/models.pth',
+              log='logs/first')
     '''

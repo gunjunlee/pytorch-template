@@ -111,7 +111,9 @@ class Model(nn.Module):
                     self.net = self.net.eval()
                     dataloader = val_dataloader
 
-                for batch_x, batch_y in tqdm(dataloader, leave=False):
+                batch_accum = 0
+                pbar = tqdm(dataloader, leave=False)
+                for batch_x, batch_y in pbar:
                     self.optimizer.zero_grad()
 
                     if use_gpu:
@@ -128,6 +130,8 @@ class Model(nn.Module):
 
                     running_loss += loss.item() * batch_x.size(0)
                     running_metric += self.metric(outputs, batch_y).item() * batch_x.size(0)
+                    batch_accum += batch_x.size(0)
+                    pbar.set_description('loss:{:.4f}, metric:{:.4f}'.format(running_loss/batch_accum, running_metric/batch_accum))
 
                 running_loss = running_loss / len(dataloader.dataset)
                 running_metric = running_metric / len(dataloader.dataset)

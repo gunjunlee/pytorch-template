@@ -65,7 +65,7 @@ class BaseDataLoader(torch.utils.data.DataLoader):
         -------
         iterable [BaseDataLoader, BaseDataLoader, ...]
             return splited dataloaders
-            their share one dataset
+            they share one dataset
         """
 
         return [BaseDataLoader(dataset=subset, **self.kwargs) for subset in self.dataset.split(lengths, shuffle=shuffle)]
