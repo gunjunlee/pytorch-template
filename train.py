@@ -7,33 +7,30 @@ import numpy as np
 
 import random
 
-from models import Model
-from loss import Loss
-from metric import Metric
+from models import Model, get_model
+from loss import get_loss
+from metric import get_metric
 from dataloader import BaseDataset, BaseDataLoader
-
+from utils import parse_config
 
 def arg_parse():
     import argparse
     parser = argparse.ArgumentParser()
     add_arg = parser.add_argument
-    add_arg('--data', default='./data/train', help='path to training data')
-    add_arg('--batch_size', default=32, type=int, help='batch size')
-    add_arg('--lr', default=1e-3, type=float, help='learning rate')
-    add_arg('--num_workers', default=8, type=int, help='num of workers')
-    add_arg('--gpu', default=True, help='using gpu')
-    add_arg('--epochs', default=100, type=int, help='num of epochs')
+    add_arg('--config', default='config/config.toml', help='path to config file')
     
     args = parser.parse_args()
     return args
 
 if __name__ == '__main__':
     args = arg_parse()
+    config = parse_config(args.config)
+
     random.seed(1000) # random
     np.random.seed(1000) # np.random
     torch.manual_seed(1000) # torch cpu
     torch.cuda.manual_seed_all(1000) # torch gpu
-    torch.backends.cudnn.deterministic = True # cudnn. *CAUTION* this will make it slow to learn.
+    # torch.backends.cudnn.deterministic = True # cudnn. *CAUTION* this will make it slow to learn.
 
     '''suggested format
     dataset = Dataset()
@@ -47,11 +44,9 @@ if __name__ == '__main__':
         net = net.cuda()
         net = nn.DataParallel(net)
     
-    criterion = Loss()
-    metric = Metric()
-    optimizer = optim.SGD(filter(lambda p:p.requires_grad, net.parameters()), 
-                          lr=args.lr, 
-                          momentum=0.9)
+    criterion = get_loss(config)
+    metric = get_metric(config)
+    optimizer = get_optimizer(filter(lambda p:p.requires_grad, net.parameters()), config)
     scheduler = lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
 
     model = Model(net)

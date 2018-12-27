@@ -2,7 +2,8 @@ def arg_parse():
     import argparse
     parser = argparse.ArgumentParser()
     add_arg = parser.add_argument
-    add_arg('--data', default='./data/test', help='path to test data')
+    add_arg('--config', default='config/config.toml', help='path to config file')
+    
     args = parser.parse_args()
     return args
 

@@ -1,0 +1,40 @@
+title = "CONFIG"
+
+DATA = "path_to_dataset"
+LOGDIR = "path_to_logdir"
+
+NUM_WORKERS = 8
+GPU = true
+
+BATCH_SIZE = 16
+
+EPOCHS = 100
+
+[MODEL]
+NAME = "RESNET18"
+
+[OPTIMIZER]
+NAME = "SGD"
+MOMENTUM = 0.9
+LR = 1e-4
+
+[LOSS]
+NAME = "DICE"
+
+[METRIC]
+NAME = "DICE"
+
+[SCHEDULER]
+STEP_SIZE = 20
+GAMMA = 0.1
+
+[TRANSFORM]
+# INPUT_SIZE = [224, 224]
+ROTATE = 10
+CROP = [0.95, 1.2]
+BRIGHTNESS = 0.2
+CONTRAST = 0.2
+MOTIONBLUR = 20
+    [TRANSFORM.FLIP]
+    HFLIP = 0.5
+    VFLIP = 0.0

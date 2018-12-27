@@ -2,19 +2,9 @@ import torch
 import torch.nn as nn
 
 
-class Loss(nn.Module):
+class Dice(nn.Module):
     def __init__(self):
-        super(Loss, self).__init__()
-        self.loss = None
-
-    def forward(self, pred, target):
-        x = self.loss(pred, target)
-        return x
-
-
-class DiceLoss(nn.Module):
-    def __init__(self):
-        super(DiceLoss, self).__init__()
+        super(Dice, self).__init__()
 
     def forward(self, pred, target):
         """calc dice loss
@@ -39,3 +29,20 @@ class DiceLoss(nn.Module):
         coeff = (2 * inter + smooth) / (dim1 + dim2 + smooth)
         dice_total = 1-coeff.sum(dim=0)/coeff.size(0)
         return dice_total
+
+
+def get_loss(config):
+    funcs = {
+
+    }
+
+    name = config.LOSS.NAME
+    
+    if name in funcs:
+        func = funcs[name]
+    else:
+        func = globals()[name]
+    
+    print('get loss: {}'.format(name))
+    return func(config)
+

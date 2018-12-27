@@ -11,9 +11,9 @@ class Metric(nn.Module):
         return self.metric(pred, target)
 
 
-class DiceMetric(nn.Module):
+class Dice(nn.Module):
     def __init__(self):
-        super(DiceMetric, self).__init__()
+        super(Dice, self).__init__()
 
     def forward(self, pred, target):
         """calc dice
@@ -40,3 +40,19 @@ class DiceMetric(nn.Module):
         coeff = (2 * inter + smooth) / (dim1 + dim2 + smooth)
         dice_total = 1-coeff.sum(dim=0)/coeff.size(0)
         return dice_total
+
+
+def get_metric(config):
+    funcs = {
+
+    }
+
+    name = config.METRIC.NAME
+    
+    if name in funcs:
+        func = funcs[name]
+    else:
+        func = globals()[name]
+    
+    print('get metric: {}'.format(name))
+    return func(config)
