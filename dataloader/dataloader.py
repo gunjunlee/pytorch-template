@@ -75,8 +75,15 @@ class CustomDataset(BaseDataset):
     """recommended custom dataset structure
     """
 
-    def __init__(self):
+    def __init__(self, 
+                 dir_root='dataset/train',
+                 mode='train',
+                 transform=None):
         super(CustomDataset, self).__init__()
+
+        self.dir_root = dir_root
+        self.mode = mode
+        self.transform = transform
 
         self.file_list = []
 
@@ -84,4 +91,22 @@ class CustomDataset(BaseDataset):
         return len(self.file_list)
 
     def __getitem__(self, idx):
-        return
+
+        # open image
+        image = None
+
+        # get name
+        name = None
+
+        # pre
+        # image = np.array()...
+
+        # transform
+        # if self.mode == 'train' and self.transform is not None:
+        #     image = self.transform(image)...
+
+        # to tensor
+        # image = transforms.functional.to_tensor(image)
+        # image = transforms.functional.normalize(image, (0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
+        
+        # return image, name...

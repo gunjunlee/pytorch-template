@@ -22,7 +22,6 @@ def constant(optimizer, config):
                                step_size=1e+8,
                                gamma=1)
 
-lr_scheduler.CosineAnnealingLR
 
 def CosineAnnealingLR(optimizer, config):
     T_max = config.SCHEDULER.T_MAX

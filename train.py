@@ -8,10 +8,13 @@ import numpy as np
 import random
 
 from models import Model, get_model
+from optimizer import get_optimizer
 from loss import get_loss
 from metric import get_metric
+from scheduler import get_scheduler
 from dataloader import BaseDataset, BaseDataLoader
 from utils import parse_config
+from transform import get_seg_transform
 
 def arg_parse():
     import argparse
@@ -40,22 +43,22 @@ if __name__ == '__main__':
     train_dataloader, val_dataloader = dataloader.split([len_train, len_val])
 
     net = Net()
-    if args.gpu:
+    if config.GPU:
         net = net.cuda()
         net = nn.DataParallel(net)
     
     criterion = get_loss(config)
     metric = get_metric(config)
     optimizer = get_optimizer(filter(lambda p:p.requires_grad, net.parameters()), config)
-    scheduler = lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
+    scheduler = get_scheduler(optimizer, config)
 
     model = Model(net)
-    model.summary(input_size=(3, 1024, 1024), use_gpu=args.gpu)
+    model.summary(input_size=(3, 1024, 1024), use_gpu=config.GPU)
     model.compile(optimizer, criterion, metric, scheduler)
     model.fit(train_dataloader=train_dataloader,
               val_dataloader=val_dataloader,
-              epoch=args.epochs,
-              use_gpu=args.gpu,
+              epoch=config.EPOCHS,
+              use_gpu=config.GPU,
               pth='ckpt/models.pth',
               log='logs/first')
     '''
