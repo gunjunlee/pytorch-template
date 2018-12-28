@@ -31,6 +31,29 @@ class Dice(nn.Module):
         return dice_total
 
 
+class WeightedBCE(nn.Module):
+    def __init__(self, kernel_size=41):
+        super(WeightedBCE, self).__init__()
+        self.kernel_size = kernel_size
+
+    def forward(self, pred, target):
+        batch_size, _, H, W = target.size()
+        
+        a = F.avg_pool2d(target, kernel_size=self.kernel_size, padding=self.kernel_size//2, stride=1)
+        ind = a.ge(0.01) * a.le(0.99)
+        ind = ind.float()
+        weights = torch.autograd.Variable(torch.ones(a.size())).cuda()
+        w0 = weights.sum()
+        weights = weights + ind*2
+        w1 = weights.sum()
+        weights = weights/w1*w0
+
+
+        dice_loss = self.dice_loss(pred, target)
+        bce_loss = nn.BCEWithLogitsLoss(weight=weights)(pred, target)
+        return bce_loss
+
+
 def get_loss(config):
     funcs = {
 
