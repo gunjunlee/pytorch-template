@@ -78,13 +78,15 @@ class CosineAnnealingLRWithRestarts(lr_scheduler._LRScheduler):
         return lrs
 
 
-def get_optimizer(optimizer, config):
+def get_scheduler(optimizer, config):
     funcs = {
         'CALR': CosineAnnealingLR,
         'CALRWR': CosineAnnealingLRWithRestarts,
+        'NONE': constant,
+        'CONSTANT': constant,
     }
 
-    name = config.OPTIMIZER.NAME
+    name = config.SCHEDULER.NAME
 
     if name in funcs:
         func = funcs[name]

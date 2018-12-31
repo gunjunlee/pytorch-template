@@ -2,17 +2,8 @@ import torch
 import torch.nn as nn
 
 
-class Metric(nn.Module):
-    def __init__(self):
-        super(Metric, self).__init__()
-        self.metric = None
-
-    def forward(self, pred, target):
-        return self.metric(pred, target)
-
-
 class Dice(nn.Module):
-    def __init__(self):
+    def __init__(self, config):
         super(Dice, self).__init__()
 
     def forward(self, pred, target):
@@ -44,7 +35,7 @@ class Dice(nn.Module):
 
 def get_metric(config):
     funcs = {
-
+        'DICE': Dice
     }
 
     name = config.METRIC.NAME

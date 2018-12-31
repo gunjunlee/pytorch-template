@@ -32,7 +32,9 @@ def sgd(params, config):
 
 def get_optimizer(params, config):
     funcs = {
-
+        'SGD': sgd,
+        'ADAM': adam,
+        'RMSPROP': rmsprop,
     }
 
     name = config.OPTIMIZER.NAME

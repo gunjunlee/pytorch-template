@@ -4,8 +4,12 @@ import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 
 import numpy as np
+import toml
 
 import random
+import os
+import os.path as osp
+
 
 from models import Model, get_model
 from optimizer import get_optimizer
@@ -34,6 +38,14 @@ if __name__ == '__main__':
     torch.manual_seed(1000) # torch cpu
     torch.cuda.manual_seed_all(1000) # torch gpu
     # torch.backends.cudnn.deterministic = True # cudnn. *CAUTION* this will make it slow to learn.
+
+    if osp.isdir(config['LOGDIR']):
+        chk = input('log dir already exists. are you sure? (y/n): ')
+        assert chk.lower() == 'y'
+    else:
+        os.makedirs(config['LOGDIR'])
+    with open(osp.join(config['LOGDIR'], 'config.toml'), 'w') as f:
+        toml.dump(config, f)
 
     '''suggested format
     dataset = Dataset()

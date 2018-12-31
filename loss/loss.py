@@ -1,9 +1,10 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 class Dice(nn.Module):
-    def __init__(self):
+    def __init__(self, config):
         super(Dice, self).__init__()
 
     def forward(self, pred, target):
@@ -32,9 +33,9 @@ class Dice(nn.Module):
 
 
 class WeightedBCE(nn.Module):
-    def __init__(self, kernel_size=41):
+    def __init__(self, config):
         super(WeightedBCE, self).__init__()
-        self.kernel_size = kernel_size
+        self.kernel_size = config.LOSS.KERNEL_SIZE
 
     def forward(self, pred, target):
         batch_size, _, H, W = target.size()
@@ -48,15 +49,13 @@ class WeightedBCE(nn.Module):
         w1 = weights.sum()
         weights = weights/w1*w0
 
-
-        dice_loss = self.dice_loss(pred, target)
         bce_loss = nn.BCEWithLogitsLoss(weight=weights)(pred, target)
         return bce_loss
 
 
 def get_loss(config):
     funcs = {
-
+        'WBCE': WeightedBCE,
     }
 
     name = config.LOSS.NAME
