@@ -72,5 +72,5 @@ if __name__ == '__main__':
               epoch=config.EPOCHS,
               use_gpu=config.GPU,
               pth='ckpt/models.pth',
-              log='logs/first')
+              log='config.LOGDIR')
     '''
