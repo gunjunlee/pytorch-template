@@ -48,13 +48,13 @@ if __name__ == '__main__':
         toml.dump(config, f)
 
     '''suggested format
-    dataset = Dataset()
-    dataloader = Dataloader()
+    dataset = CustomDataset()
+    dataloader = BaseDataLoader()
     len_train = len(dataset) * 8 // 10
     len_val = len(dataset) - len_train
     train_dataloader, val_dataloader = dataloader.split([len_train, len_val])
 
-    net = Net()
+    net = get_model()
     if config.GPU:
         net = net.cuda()
         net = nn.DataParallel(net)
@@ -72,5 +72,5 @@ if __name__ == '__main__':
               epoch=config.EPOCHS,
               use_gpu=config.GPU,
               pth='ckpt/models.pth',
-              log='config.LOGDIR')
+              log=config.LOGDIR)
     '''
