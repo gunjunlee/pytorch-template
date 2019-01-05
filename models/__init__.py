@@ -13,5 +13,5 @@ def get_model(config):
         func = globals()[name]
     
     print('get model: {}'.format(name))
-    return func()
+    return func(config)
 

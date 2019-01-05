@@ -80,7 +80,7 @@ class Model(nn.Module):
             train_metric = None
             val_metric = None
 
-            for phase in ['train', 'val']:
+            for phase in ['train', 'val', 'avg_val']:
                 running_loss = 0
                 running_metric = 0
 
