@@ -3,10 +3,18 @@ import torch.nn as nn
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from tqdm import tqdm
 from tensorboardX import SummaryWriter
+from termcolor import colored
+from torchsummary import summary
 
 import os
 import os.path as osp
+import sys
+import copy
+from time import time
 
+sys.path.append('../')
+
+from utils import print_row, WeightAverage, Accumulator
 
 class Model(nn.Module):
     def __init__(self, net):
@@ -32,7 +40,6 @@ class Model(nn.Module):
         self.scheduler = scheduler
 
     def summary(self, input_size=(3, 224, 224), use_gpu=False):
-        from torchsummary import summary
         if use_gpu:
             summary(self.net.cuda(), input_size=input_size)
         else:
@@ -53,38 +60,9 @@ class Model(nn.Module):
 
         writer = SummaryWriter(log)
 
-        def padding(arg, width, pad=' '):
-            if isinstance(arg, float):
-                return '{:.6f}'.format(arg).center(width, pad)
-            elif isinstance(arg, int):
-                return '{:6d}'.format(arg).center(width, pad)
-            elif isinstance(arg, str):
-                return arg.center(width, pad)
-            elif isinstance(arg, tuple):
-                if len(arg) != 2:
-                    raise ValueError('Unknown type: {}'.format(type(arg), arg))
-                if not isinstance(arg[1], str):
-                    raise ValueError('Unknown type: {}'
-                                     .format(type(arg[1]), arg[1]))
-                return colored(padding(arg[0], width, pad=pad), arg[1])
-            else:
-                raise ValueError('Unknown type: {}'.format(type(arg), arg))
-
-        def print_row(kwarg_list=[], pad=' '):
-            len_kwargs = len(kwarg_list)
-            term_width = shutil.get_terminal_size().columns
-            width = min((term_width-1-len_kwargs)*9//10, 150) // len_kwargs
-            row = '|{}' * len_kwargs + '|'
-            columns = []
-            for kwarg in kwarg_list:
-                columns.append(padding(kwarg, width, pad=pad))
-            print(row.format(*columns))
-
-        from termcolor import colored
-        from time import time
-
         kwarg_list = ['epoch', 'loss', 'metric',
-                      'val loss', 'val metric', 'time']
+                      'val loss', 'val metric', 
+                      'avg_val_loss', 'avg_val_metric', 'time']
 
         print(colored('model training start!', 'green'))
 
@@ -93,6 +71,8 @@ class Model(nn.Module):
         print_row(kwarg_list=['']*len(kwarg_list), pad='-')
 
         min_val_loss = 1e+8
+        min_val_metric = -1e+8
+        weight_average = WeightAverage(len=5)
         for ep in range(1, epoch+1):
             start_time = time()
             train_loss = None
@@ -109,6 +89,11 @@ class Model(nn.Module):
                     dataloader = train_dataloader
                 elif phase == 'val':
                     self.net = self.net.eval()
+                    dataloader = val_dataloader
+                elif phase == 'avg_val':
+                    state_dict = copy.deepcopy(self.net.state_dict())
+                    weight_average.append(state_dict)
+                    self.net.load_state_dict(weight_average.mean())
                     dataloader = val_dataloader
 
                 batch_accum = 0
@@ -142,6 +127,11 @@ class Model(nn.Module):
                 elif phase == 'val':
                     val_loss = running_loss
                     val_metric = running_metric
+                elif phase == 'avg_val':
+                    avg_val_loss = running_loss
+                    avg_val_metric = running_metric
+                    self.net.load_state_dict(state_dict)
+
 
             if isinstance(self.scheduler, ReduceLROnPlateau):
                 self.scheduler.step(val_loss)
@@ -152,22 +142,44 @@ class Model(nn.Module):
 
             writer.add_scalar('loss/train', train_loss, ep)
             writer.add_scalar('loss/val', val_loss, ep)
+            writer.add_scalar('loss/avg_val', avg_val_loss, ep)
             writer.add_scalar('metric/train', train_metric, ep)
             writer.add_scalar('metric/val', val_metric, ep)
+            writer.add_scalar('metric/avg_val', avg_val_metric, ep)
 
-            if min_val_loss > val_loss:
-                min_val_loss = val_loss
+            if min_val_metric < val_metric:
+                min_val_metric = val_metric
                 self.save_model(pth)
                 ep = (str(ep)+'(saved)', 'blue')
+            if min_val_metric < avg_val_metric:
+                min_val_metric = avg_val_metric
+                self.save_model(pth, weight_average)
+                print(isinstance(ep, tuple))
+                if not isinstance(ep, tuple):
+                    ep = (str(ep)+'(saved)', 'blue')
 
             print_row(kwarg_list=[ep, train_loss, train_metric,
-                                  val_loss, val_metric, elapsed_time], pad=' ')
+                                  val_loss, val_metric, avg_val_loss, 
+                                  avg_val_metric, elapsed_time], pad=' ')
             print_row(kwarg_list=['']*len(kwarg_list), pad='-')
 
-    def save_model(self, pth):
-        if hasattr(self.net, 'module'):
-            state_dict = self.net.module.state_dict()
-        else:
-            state_dict = self.net.state_dict()
+    def extract_state_dict(self, model, weight_average=None):
+        def get(model):
+            if hasattr(model, 'module'):
+                return self.net.module.state_dict()
+            else:
+                return self.net.state_dict()
 
+        if weight_average is None:
+            state_dict = get(model)
+        else:
+            temp = model.state_dict()
+            state_dict = weight_average.mean()
+            model.load_state_dict(state_dict)
+            state_dict = get(model)
+            model.load_state_dict(temp)
+        return state_dict
+
+    def save_model(self, pth, weight_average=None):
+        state_dict = self.extract_state_dict(self.net, weight_average)
         torch.save(state_dict, pth)

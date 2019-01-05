@@ -2,7 +2,7 @@ title = "CONFIG"
 
 DATA = "path_to_dataset"
 LOGDIR = "path_to_logdir"
-
+ 
 NUM_WORKERS = 8
 GPU = true
 
@@ -33,8 +33,8 @@ GAMMA = 0.1
 # INPUT_SIZE = [224, 224]
 ROTATE = 10
 CROP = [0.95, 1.2]
-BRIGHTNESS = 0.2
-CONTRAST = 0.2
+# BRIGHTNESS = 0.2
+# CONTRAST = 0.2
 MOTIONBLUR = 20
     [TRANSFORM.FLIP]
     HFLIP = 0.5

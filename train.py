@@ -71,6 +71,6 @@ if __name__ == '__main__':
               val_dataloader=val_dataloader,
               epoch=config.EPOCHS,
               use_gpu=config.GPU,
-              pth='ckpt/models.pth',
+              pth=osp.join(confug.LOGDIR, 'model.pth'),
               log=config.LOGDIR)
     '''
